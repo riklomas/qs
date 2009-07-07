@@ -10,7 +10,8 @@
 			$(document).ready(function () {				
 				$('input[name="search"]').qs('table#large tbody tr', {
 					hideElement: 'parent',
-					loader: '.loading'
+					loader: '.loading',
+					noResults: '#noresults'
 				});
 			})			
 		</script>
@@ -43,6 +44,9 @@
 		</tr>
     </thead>
     <tbody>
+		<tr id="noresults">
+			<td colspan="9">No results</td>
+		</tr>
 		<tr>
 			<td>devo@flexomat.com</td><td>66672</td><td>941-964-8535</td><td>$2482.79</td><td>172.78.200.124</td><td>http://gmail.com</td><td>15:10</td><td>1988/12/14</td><td>14/12/1988</td>
 		</tr>

@@ -6,12 +6,14 @@ jQuery(function ($) {
 			selector: null,
 			stripeRows: null,
 			loader: null,
+			noResults: '',
 			onBefore: function () { return; },
 			onAfter: function () { return; },
 			filter: function (i) { return i; }
 		}, opt);
 		
 		var timeout, cache;
+		
 		
 		$.extend({
 			qs: {
@@ -24,17 +26,24 @@ jQuery(function ($) {
 					timeout = setTimeout(function () {
 						
 						vals = val.split(' ');
-						var i = 0;
+						var i = 0, noresults = true;
 						
-						$(target).each(function (i) {
+						$(target).not(options.noResults).each(function (i) {
 							if ($.qs.test(vals, cache[i])) {
 								$(this).show();
+								noresults = false;
 							} else {
 								$(this).hide();
 							}
-						});	
+						});
 						
-						$.qs.stripe();
+						if (noresults) {
+							$.qs.results(false);
+						} else {
+							$.qs.results(true);
+							$.qs.stripe();
+						}
+						
 						$.qs.loader(false);
 						options.onAfter();
 					});
@@ -42,7 +51,7 @@ jQuery(function ($) {
 				stripe: function () {
 					if (typeof options.stripeRows === "object" && options.stripeRows !== null)
 					{
-						$(target).filter(':visible').each(function (i) {
+						$(target).not(options.noResults).filter(':visible').each(function (i) {
 							i = i % options.stripeRows.length;
 							
 							$(this).addClass(options.stripeRows[i]);
@@ -61,6 +70,15 @@ jQuery(function ($) {
 					output = $.trim(output.toLowerCase());
 					return output;
 				},
+				results: function (bool) {
+					if (typeof options.noResults === "string" && options.noResults !== "") {
+						if (bool) {
+							$(options.noResults).hide();
+						} else {
+							$(options.noResults).show();
+						}
+					}
+				},
 				loader: function (bool) {
 					return (bool) ? $(options.loader).show() : $(options.loader).hide();
 				},
@@ -74,7 +92,7 @@ jQuery(function ($) {
 				},
 				cache: {
 					make: function () {
-						var t = (typeof options.selector === "string") ? $(target).find(options.selector) : $(target);
+						var t = (typeof options.selector === "string") ? $(target).not(options.noResults).find(options.selector) : $(target).not(options.noResults);
 						cache = t.map(function() {
 							return $.qs.strip_html(this.innerHTML);
 						});
@@ -86,6 +104,7 @@ jQuery(function ($) {
 		$.qs.stripe();
 		$.qs.cache.make();
 		$.qs.loader(false);
+		$.qs.results(true);
 		
 		return this.each(function () {
 			
