@@ -51,7 +51,7 @@ jQuery(function ($) {
 				stripe: function () {
 					if (typeof options.stripeRows === "object" && options.stripeRows !== null)
 					{
-						$(target).not(options.noResults).filter(':visible').each(function (i) {
+						$(target).not(options.noResults).not(':hidden').each(function (i) {
 							i = i % options.stripeRows.length;
 							
 							$(this).addClass(options.stripeRows[i]);
