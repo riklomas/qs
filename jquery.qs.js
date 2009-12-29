@@ -1,117 +1,143 @@
 jQuery(function ($) {
 	$.fn.qs = function (target, opt) {
 		
-		var options = $.extend({ 
+		var timeout, cache, rowcache, jq_results, e = this, options = $.extend({ 
 			delay: 200,
 			selector: null,
 			stripeRows: null,
 			loader: null,
 			noResults: '',
-			onBefore: function () { return; },
-			onAfter: function () { return; },
-			filter: function (i) { return i; }
+			onBefore: function () { 
+				return;
+			},
+			onAfter: function () { 
+				return;
+			},
+			filter: function (i) { 
+				return i;
+			}
 		}, opt);
 		
-		var timeout, cache;
 		
-		
-		$.extend({
-			qs: {
-				go: function (val) {
-					
-					$.qs.loader(true);
-					options.onBefore();
-					
-					clearTimeout(timeout);
-					timeout = setTimeout(function () {
-						
-						vals = val.split(' ');
-						var i = 0, noresults = true;
-						
-						$(target).not(options.noResults).each(function (i) {
-							if ($.qs.test(vals, cache[i])) {
-								$(this).show();
-								noresults = false;
-							} else {
-								$(this).hide();
-							}
-						});
-						
-						if (noresults) {
-							$.qs.results(false);
-						} else {
-							$.qs.results(true);
-							$.qs.stripe();
-						}
-						
-						$.qs.loader(false);
-						options.onAfter();
-					});
-				},
-				stripe: function () {
-					if (typeof options.stripeRows === "object" && options.stripeRows !== null)
-					{
-						$(target).not(options.noResults).not(':hidden').each(function (i) {
-							i = i % options.stripeRows.length;
-							
-							$(this).addClass(options.stripeRows[i]);
-							
-							for (var j = 0; j < options.stripeRows.length; j++)
-							{
-								if (i !== j) {
-									$(this).removeClass(options.stripeRows[j]);
-								}
-							}
-						});
-					}
-				},
-				strip_html: function (input) {
-					var output = input.replace(new RegExp(/\<[^\<]+\>/g), "");
-					output = $.trim(output.toLowerCase());
-					return output;
-				},
-				results: function (bool) {
-					if (typeof options.noResults === "string" && options.noResults !== "") {
-						if (bool) {
-							$(options.noResults).hide();
-						} else {
-							$(options.noResults).show();
-						}
-					}
-				},
-				loader: function (bool) {
-					return (bool) ? $(options.loader).show() : $(options.loader).hide();
-				},
-				test: function (vals, t) {
-					for (var i = 0; i < vals.length; i++) {
-						if (t.indexOf(vals[i]) === -1) {
-							return false;
-						}
-					}
-					return true;
-				},
-				cache: {
-					make: function () {
-						var t = (typeof options.selector === "string") ? $(target).not(options.noResults).find(options.selector) : $(target).not(options.noResults);
-						cache = t.map(function() {
-							return $.qs.strip_html(this.innerHTML);
-						});
-					}
+		this.go = function (val) {
+			
+			var i = 0, noresults = true, vals = val.split(' ');
+			
+			var rowcache_length = rowcache.length;
+			for (var i = 0; i < rowcache_length; i++)
+			{
+				if (this.test(vals, cache[i]) || val == "") {
+					rowcache[i].style.display = "";
+					noresults = false;
+				} else {
+					rowcache[i].style.display = "none";
 				}
 			}
-		});
-		
-		$.qs.stripe();
-		$.qs.cache.make();
-		$.qs.loader(false);
-		$.qs.results(true);
-		
-		return this.each(function () {
 			
-			$(this).keyup(function () {
-				$.qs.go($(this).val());
+			if (noresults) {
+				this.results(false);
+			} else {
+				this.results(true);
+				this.stripe();
+			}
+			
+			this.loader(false);
+			options.onAfter();
+			
+			return this;
+		};
+		
+		this.stripe = function () {
+			
+			if (typeof options.stripeRows === "object" && options.stripeRows !== null)
+			{
+				var joined = options.stripeRows.join(' ');
+				var stripeRows_length = options.stripeRows.length;
+				
+				jq_results.not(':hidden').each(function (i) {
+					$(this).removeClass(joined).addClass(options.stripeRows[i % stripeRows_length]);
+				});
+			}
+			
+			return this;
+		};
+		
+		this.strip_html = function (input) {
+			var output = input.replace(new RegExp('/<[^<]+\>/g'), "");
+			output = $.trim(output.toLowerCase());
+			return output;
+		};
+		
+		this.results = function (bool) {
+			if (typeof options.noResults === "string" && options.noResults !== "") {
+				if (bool) {
+					$(options.noResults).hide();
+				} else {
+					$(options.noResults).show();
+				}
+			}
+			return this;
+		};
+		
+		this.loader = function (bool) {
+			if (typeof options.loader === "string" && options.loader !== "") {
+				 (bool) ? $(options.loader).show() : $(options.loader).hide();
+			}
+			return this;
+		};
+		
+		this.test = function (vals, t) {
+			for (var i = 0; i < vals.length; i += 1) {
+				if (t.indexOf(vals[i]) === -1) {
+					return false;
+				}
+			}
+			return true;
+		};
+		
+		this.cache = function () {
+			
+			jq_results = $(target);
+			
+			if (typeof options.noResults === "string" && options.noResults !== "") {
+				jq_results = jq_results.not(options.noResults);
+			}
+			
+			var t = (typeof options.selector === "string") ? jq_results.find(options.selector) : $(target).not(options.noResults);
+			cache = t.map(function () {
+				return e.strip_html(this.innerHTML);
 			});
 			
+			rowcache = jq_results.map(function () {
+				return this;
+			});
+			
+			return this;
+		};
+		
+		this.trigger = function (val) {
+			this.loader(true);
+			options.onBefore();
+			
+			window.clearTimeout(timeout);
+			timeout = window.setTimeout(function () {
+				console.time('go_' + val);
+				e.go(val);
+				console.timeEnd('go_' + val);
+			}, options.delay);
+		};
+		
+		this.cache();
+		this.results(true);
+		this.stripe();
+		this.loader(false);
+		
+		return this.each(function () {
+			$(this).bind('keyup', function () {
+				var val = $(this).val();
+				e.trigger(val);
+			});
 		});
+		
 	};
-});	
+});
